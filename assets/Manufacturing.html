@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#7ff3be",
+                        "inverse-primary": "#618bff",
+                        "primary-dim": "#0048c1",
+                        "inverse-surface": "#0b0f10",
+                        "primary": "#0053db",
+                        "surface-container": "#e8eff3",
+                        "on-tertiary-container": "#005a3d",
+                        "primary-container": "#dbe1ff",
+                        "on-primary-container": "#0048bf",
+                        "tertiary-dim": "#005f41",
+                        "tertiary": "#006d4b",
+                        "secondary": "#506076",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#006545",
+                        "primary-fixed": "#dbe1ff",
+                        "on-error-container": "#752121",
+                        "surface-bright": "#f7f9fb",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-primary-fixed-variant": "#0050d4",
+                        "on-secondary-container": "#435368",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "outline": "#717c82",
+                        "outline-variant": "#a9b4b9",
+                        "surface-container-low": "#f0f4f7",
+                        "error": "#9f403d",
+                        "error-container": "#fe8983",
+                        "on-background": "#2a3439",
+                        "tertiary-container": "#7ff3be",
+                        "inverse-on-surface": "#9a9d9f",
+                        "surface-container-highest": "#d9e4ea",
+                        "surface-variant": "#d9e4ea",
+                        "surface-container-high": "#e1e9ee",
+                        "on-error": "#fff7f6",
+                        "on-secondary": "#f7f9ff",
+                        "on-tertiary-fixed": "#00452e",
+                        "on-primary": "#f8f7ff",
+                        "on-surface-variant": "#566166",
+                        "background": "#f7f9fb",
+                        "surface": "#f7f9fb",
+                        "surface-dim": "#cfdce3",
+                        "on-tertiary": "#e6ffef",
+                        "on-surface": "#2a3439",
+                        "tertiary-fixed-dim": "#71e4b1",
+                        "on-secondary-fixed": "#314055",
+                        "primary-fixed-dim": "#c7d3ff",
+                        "surface-tint": "#0053db",
+                        "on-primary-fixed": "#003798",
+                        "secondary-dim": "#44546a",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "error-dim": "#4e0309",
+                        "secondary-container": "#d3e4fe"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar Component -->
+<aside class="h-screen w-64 fixed left-0 top-0 flex flex-col h-full border-r border-slate-200/50 dark:border-slate-800/50 bg-slate-100 dark:bg-slate-900 font-manrope tracking-tight text-sm z-50">
+<div class="p-6">
+<h1 class="text-2xl font-bold tracking-widest text-slate-900 dark:text-white">Inventory Pro</h1>
+<p class="text-xs opacity-60 uppercase tracking-tighter mt-1">Enterprise Hub</p>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors rounded-xl transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors rounded-xl transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors rounded-xl transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span>Orders</span>
+</a>
+<!-- Active Tab: Manufacturing -->
+<a class="flex items-center gap-3 px-4 py-3 text-blue-700 dark:text-blue-400 font-bold border-r-4 border-blue-700 bg-slate-200/50 dark:bg-slate-800/50 rounded-l-xl transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="factory">factory</span>
+<span>Manufacturing</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors rounded-xl transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-200/50 dark:border-slate-800/50 space-y-1">
+<button class="w-full bg-blue-700 text-white py-3 rounded-xl font-bold transition-transform scale-95 active:scale-90 mb-4">New Entry</button>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar Component -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl shadow-sm dark:shadow-none flex justify-between items-center px-8 font-manrope text-sm font-medium">
+<div class="flex items-center gap-8">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-xl pl-10 pr-4 py-2 focus:ring-2 focus:ring-primary/20 w-64 transition-all focus:w-80" placeholder="Search architecture..." type="text"/>
+</div>
+<nav class="flex items-center gap-6">
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-opacity opacity-80 hover:opacity-100" href="#">Overview</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-opacity opacity-80 hover:opacity-100" href="#">Logs</a>
+<a class="text-blue-700 dark:text-blue-400 border-b-2 border-blue-700 pb-1" href="#">Schedule</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant/30">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-on-surface">Alex Mercer</p>
+<p class="text-[10px] text-on-surface-variant">Production Lead</p>
+</div>
+<img alt="Manager profile" class="w-8 h-8 rounded-full border-2 border-primary-fixed shadow-sm" data-alt="portrait of a professional male manager in a modern office with clean lighting and soft background focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVG6wiZ6WEI9iCQvVkytEScvLZ7nGwf_UnBEDX_90UIow1LZ-X4yt601GOzZVSOW4VEJyTrqhVhOHs0r_xwEjETW-_EwL03TZkiFsPNnfPIMGVGlDcB2hg86VHVfEIZGRXSEUp1AZLK8AmdLUdD3Cdu4OabSPujFn196lzoLqB99eLVznyq435-cy9mYgRXoxr9Q07ioyd9RqJwifcetJJVTNLmyktX_NtgIGJNFrLN7ZOfJh5aEmp_1XvmcQ6YlIxz7FaE_VcIOkH"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 p-8 min-h-screen">
+<div class="max-w-7xl mx-auto space-y-8">
+<!-- Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface">Manufacturing Workflow</h2>
+<p class="text-on-surface-variant mt-1">Transform resources into finished assets with precision control.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 bg-surface-container-high text-on-surface font-semibold rounded-xl hover:bg-surface-container-highest transition-colors">Export Batch Report</button>
+<button class="px-6 py-3 bg-gradient-to-br from-primary to-primary-dim text-white font-semibold rounded-xl shadow-lg shadow-primary/20 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                        New Production Run
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- 1. Convert Raw to Finished Action Area -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/15">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-bold">Conversion Engine</h3>
+<div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                            System Ready
+                        </div>
+</div>
+<div class="flex flex-col md:flex-row items-center gap-8">
+<!-- Input Zone -->
+<div class="flex-1 w-full space-y-4">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Input: Raw Materials</label>
+<div class="p-6 bg-surface-container-low rounded-xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center text-center group hover:border-primary/40 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-4xl text-primary mb-3" data-icon="precision_manufacturing">precision_manufacturing</span>
+<p class="text-sm font-medium">Select Source SKU</p>
+<p class="text-xs text-on-surface-variant mt-1">Aluminum Alloy 6061-T6</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant">Quantity</p>
+<p class="text-lg font-bold">500 <span class="text-sm font-normal">kg</span></p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant">Est. Yield</p>
+<p class="text-lg font-bold">98.2<span class="text-sm font-normal">%</span></p>
+</div>
+</div>
+</div>
+<!-- Central Flow Icon -->
+<div class="flex-shrink-0 flex items-center justify-center">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined" data-icon="trending_flat">trending_flat</span>
+</div>
+</div>
+<!-- Output Zone -->
+<div class="flex-1 w-full space-y-4">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">Output: Finished Goods</label>
+<div class="p-6 bg-primary-fixed-dim rounded-xl flex flex-col items-center justify-center text-center border border-primary/10">
+<span class="material-symbols-outlined text-4xl text-on-primary-fixed mb-3" data-icon="package_2">package_2</span>
+<p class="text-sm font-bold text-on-primary-fixed">Engine Chassis V3</p>
+<p class="text-xs text-on-primary-fixed-variant mt-1">Ready for serialization</p>
+</div>
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-dim text-white rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-transform">
+                                EXECUTE CONVERSION
+                            </button>
+</div>
+</div>
+</div>
+<!-- 2. Stock Health / Status Sidebar -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<div class="bg-surface-container-high rounded-xl p-6 shadow-sm">
+<h3 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Stock Overview</h3>
+<div class="space-y-4">
+<!-- Raw Stock Item -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="category">category</span>
+</div>
+<div>
+<p class="text-sm font-bold">Raw Metals</p>
+<p class="text-[10px] text-on-surface-variant">12 Active SKUs</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">2,450 kg</p>
+<p class="text-[10px] text-tertiary font-bold">+5.2%</p>
+</div>
+</div>
+<!-- Finished Stock Item -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="inventory">inventory</span>
+</div>
+<div>
+<p class="text-sm font-bold">Finished Parts</p>
+<p class="text-[10px] text-on-surface-variant">42 Active SKUs</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">892 Units</p>
+<p class="text-[10px] text-error font-bold">Low Stock</p>
+</div>
+</div>
+</div>
+<!-- Progress Visualization -->
+<div class="mt-6 pt-6 border-t border-outline-variant/20">
+<div class="flex justify-between text-xs font-bold text-on-surface-variant mb-2">
+<span>DAILY QUOTA</span>
+<span>74%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 74%"></div>
+</div>
+</div>
+</div>
+<!-- Warehouse View (Editorial Aesthetic) -->
+<div class="relative h-48 rounded-xl overflow-hidden group">
+<img alt="Modern smart warehouse with high ceilings and automated machinery" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" data-alt="Modern high-tech industrial warehouse with sophisticated automated robotic arms and cool blue professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPS4XVBP0pyT0QZqSOuaOM9b9QmH1XcptllAcSgvoQ4ilKM6hRn949s5V5T1pqROHysPpHXEk0TQduI15Tj7vNcoScgq3_IOGx6eIm6X2dTH-Rui8TNg6cbFEf5Y1xudKxwdaY3dOKnDVqb41iRRyovaKNWdheq5XM3APBL3HSJNUVhdnnGK-VTxJja03akr4UOtU3d9pm_sFgXKlgu2Jjs6ivrC27DB_axxYbNJ2SYJHEdV7jmVf9wpc7_Z2oL1LllkibzT0_C_xc"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
+<p class="text-white text-xs font-bold tracking-widest uppercase">Live View</p>
+<p class="text-white/80 text-[10px]">Zone B-14 Automated Facility</p>
+</div>
+</div>
+</div>
+<!-- 3. History of Manufacturing Runs -->
+<div class="col-span-12 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/15 overflow-hidden">
+<div class="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center">
+<div>
+<h3 class="text-xl font-bold">Recent Operations</h3>
+<p class="text-xs text-on-surface-variant">Audit log of material conversions</p>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container text-xs font-bold rounded-full">All States</span>
+<span class="px-3 py-1 text-xs font-bold opacity-40">Filters</span>
+</div>
+</div>
+<div class="overflow-x-auto no-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Batch ID</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Source Material</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Conversion Ratio</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Timestamp</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Status</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-bold text-sm">#RUN-88219</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-400"></span>
+<span class="text-sm">Composite Fiber G4</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">1:0.85 Yield</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">22 Min Ago</td>
+<td class="px-8 py-5">
+<span class="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-3 py-1 rounded-full">COMPLETED</span>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-bold text-sm">#RUN-88218</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-400"></span>
+<span class="text-sm">Polymer Resin HT</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">1:1.02 Vol</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">1 Hr Ago</td>
+<td class="px-8 py-5">
+<span class="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-3 py-1 rounded-full">COMPLETED</span>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-bold text-sm">#RUN-88217</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-blue-400"></span>
+<span class="text-sm">Steel Ingot X-7</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">1:0.92 Yield</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">4 Hrs Ago</td>
+<td class="px-8 py-5">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-3 py-1 rounded-full">IN REVIEW</span>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
