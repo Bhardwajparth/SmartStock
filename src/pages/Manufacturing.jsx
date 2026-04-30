@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 
 export const Manufacturing = () => {
-  const { inventory, startManufacturingJob, manufacturingJobs } = useContext(AppContext);
+  const { inventory, startManufacturingJob, manufacturingJobs, updateJobStatus, searchQuery } = useContext(AppContext);
   const [sourceId, setSourceId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [qty, setQty] = useState(10);
@@ -10,13 +10,23 @@ export const Manufacturing = () => {
   const rawMaterials = inventory.filter(i => i.type === 'Raw Material' || i.type === 'Consumable' || i.type === 'Component');
   const finishedGoods = inventory.filter(i => i.type === 'Finished Good' || i.type === 'Component');
 
+  const filteredJobs = manufacturingJobs.filter(j => 
+    j.id.includes(searchQuery) ||
+    (inventory.find(i => i.id === j.finishedGoodId)?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const activeJobsCount = manufacturingJobs.filter(j => j.status === 'In Progress').length;
 
   const handleConversion = () => {
     if (sourceId && targetId && qty > 0) {
       startManufacturingJob([sourceId], targetId, parseInt(qty, 10));
+      setQty(10);
+      setSourceId('');
+      setTargetId('');
     }
   };
+
+  const estYield = Math.max(85, 99.5 - (qty * 0.05)).toFixed(1);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -62,7 +72,7 @@ export const Manufacturing = () => {
                 </div>
                 <div className="bg-surface-container-low p-4 rounded-xl">
                   <p className="text-[10px] uppercase font-bold text-on-surface-variant">Est. Yield</p>
-                  <p className="text-lg font-bold mt-2">98.2<span className="text-sm font-normal">%</span></p>
+                  <p className="text-lg font-bold mt-2">{estYield}<span className="text-sm font-normal">%</span></p>
                 </div>
               </div>
             </div>
@@ -126,10 +136,10 @@ export const Manufacturing = () => {
             <div className="mt-6 pt-6 border-t border-outline-variant/20">
               <div className="flex justify-between text-xs font-bold text-on-surface-variant mb-2">
                 <span>DAILY QUOTA</span>
-                <span>74%</span>
+                <span>{(manufacturingJobs.length * 10) % 100}%</span>
               </div>
               <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden">
-                <div className="bg-primary h-full rounded-full" style={{ width: '74%' }}></div>
+                <div className="bg-primary h-full rounded-full" style={{ width: `${(manufacturingJobs.length * 10) % 100}%` }}></div>
               </div>
             </div>
           </div>
@@ -161,7 +171,7 @@ export const Manufacturing = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
-                {manufacturingJobs.map((job, idx) => (
+                {filteredJobs.map((job, idx) => (
                   <tr key={job.id} className="hover:bg-surface-container-low transition-colors group">
                     <td className="px-8 py-5 font-bold text-sm">#RUN-{job.id.slice(-5)}</td>
                     <td className="px-8 py-5">
@@ -171,15 +181,23 @@ export const Manufacturing = () => {
                       </div>
                     </td>
                     <td className="px-8 py-5 text-sm text-on-surface-variant">{job.qty} units</td>
-                    <td className="px-8 py-5 text-sm text-on-surface-variant">Just now</td>
+                    <td className="px-8 py-5 text-sm text-on-surface-variant">{new Date(job.timestamp || Date.now()).toLocaleTimeString()}</td>
                     <td className="px-8 py-5">
-                      <span className="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase">{job.status}</span>
+                      <select 
+                        value={job.status} 
+                        onChange={(e) => updateJobStatus(job.id, e.target.value)}
+                        className={`bg-transparent text-[10px] font-bold px-3 py-1 rounded-full uppercase outline-none focus:ring-2 focus:ring-primary/20 ${job.status === 'Completed' ? 'bg-tertiary-container text-on-tertiary-container' : 'bg-surface-container-highest text-on-surface-variant'}`}
+                      >
+                        <option>In Progress</option>
+                        <option>Completed</option>
+                        <option>Failed</option>
+                      </select>
                     </td>
                   </tr>
                 ))}
-                {manufacturingJobs.length === 0 && (
+                {filteredJobs.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="px-8 py-10 text-center text-slate-500">No recent operations. Run a conversion to see it here.</td>
+                    <td colSpan="5" className="px-8 py-10 text-center text-slate-500">No recent operations found.</td>
                   </tr>
                 )}
               </tbody>

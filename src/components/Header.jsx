@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
+import { AppContext } from '../context/AppContext';
 
 export const Header = () => {
+  const { searchQuery, setSearchQuery } = useContext(AppContext);
   return (
     <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-white/70 backdrop-blur-xl z-40 flex justify-between items-center px-8 shadow-sm">
       <div className="flex items-center flex-1 max-w-xl">
         <div className="relative w-full group">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined">search</span>
           <input 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-surface-container-low border-none rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all outline-none" 
             placeholder="Search architecture, SKUs, or logs..." 
             type="text"

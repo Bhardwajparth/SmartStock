@@ -2,9 +2,39 @@ import React, { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 
 export const Reports = () => {
-  const { orders } = useContext(AppContext);
+  const { orders, inventory } = useContext(AppContext);
 
-  const totalSalesValue = orders.filter(o => o.type === 'Sales').reduce((acc, order) => acc + (order.qty * 1200), 0);
+  const totalSalesValue = orders.filter(o => o.type === 'Sales').reduce((acc, order) => {
+    const item = inventory.find(i => i.id === order.productId);
+    return acc + (order.qty * (item?.price || 1200));
+  }, 0);
+
+  const salesCounts = {};
+  orders.filter(o => o.type === 'Sales').forEach(o => {
+    salesCounts[o.productId] = (salesCounts[o.productId] || 0) + o.qty;
+  });
+  
+  let bestSellingItemId = null;
+  let maxSales = 0;
+  for (const [id, qty] of Object.entries(salesCounts)) {
+    if (qty > maxSales) {
+      maxSales = qty;
+      bestSellingItemId = id;
+    }
+  }
+  const bestSellingItem = inventory.find(i => i.id === bestSellingItemId) || { name: 'N/A', price: 0 };
+  const bestSellingVelocity = maxSales > 0 ? `${maxSales} units / period` : '0 units';
+  const bestSellingContrib = totalSalesValue > 0 ? Math.round(((maxSales * (bestSellingItem.price || 1200)) / totalSalesValue) * 100) : 0;
+
+  const slowestItem = inventory.find(i => !salesCounts[i.id] && i.stock > 0) || inventory[0] || { name: 'N/A' };
+
+  const inStockCount = inventory.filter(i => i.stock >= (i.maxStock || 500) * 0.1).length;
+  const lowStockCount = inventory.filter(i => i.stock > 0 && i.stock < (i.maxStock || 500) * 0.1).length;
+  const outOfStockCount = inventory.filter(i => i.stock === 0).length;
+  const totalItems = inventory.length || 1;
+  const healthPct = Math.round((inStockCount / totalItems) * 100);
+
+  const handleExport = () => window.print();
 
   return (
     <div className="max-w-7xl mx-auto space-y-12">
@@ -25,7 +55,7 @@ export const Reports = () => {
             <span className="text-sm font-semibold text-on-surface">Oct 1, 2023 - Oct 31, 2023</span>
             <span className="material-symbols-outlined text-on-surface-variant text-lg cursor-pointer">expand_more</span>
           </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl font-bold text-sm transition-all">
+          <button onClick={handleExport} className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl font-bold text-sm transition-all">
             <span className="material-symbols-outlined text-lg">file_download</span> Export
           </button>
         </div>
@@ -49,20 +79,24 @@ export const Reports = () => {
 
         <div className="md:col-span-2 bg-surface-container-low p-6 rounded-3xl flex gap-6 items-center">
           <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-surface-container-high flex items-center justify-center">
-            <span className="material-symbols-outlined text-4xl text-on-surface-variant">star</span>
+            {bestSellingItem.imgUrl ? (
+              <img src={bestSellingItem.imgUrl} alt={bestSellingItem.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="material-symbols-outlined text-4xl text-on-surface-variant">star</span>
+            )}
           </div>
           <div>
             <span className="bg-tertiary-container text-on-tertiary-container text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full mb-2 inline-block">Best Selling Item</span>
-            <h3 className="text-xl font-bold font-headline mb-1">Architectural Lens Kit 4K</h3>
-            <p className="text-on-surface-variant text-sm">Velocity: <span className="text-on-surface font-bold">142 units / day</span></p>
-            <p className="text-tertiary text-xs font-bold mt-1 italic">Contribution: 24% of total revenue</p>
+            <h3 className="text-xl font-bold font-headline mb-1">{bestSellingItem.name}</h3>
+            <p className="text-on-surface-variant text-sm">Velocity: <span className="text-on-surface font-bold">{bestSellingVelocity}</span></p>
+            <p className="text-tertiary text-xs font-bold mt-1 italic">Contribution: {bestSellingContrib}% of total revenue</p>
           </div>
         </div>
 
         <div className="bg-surface-container-highest p-6 rounded-3xl flex flex-col justify-center border-l-4 border-error">
           <p className="text-error font-bold text-[10px] uppercase tracking-widest mb-1">Slowest Turnover</p>
-          <h4 className="text-lg font-bold font-headline mb-1 leading-tight">Vintage Leather Briefcase</h4>
-          <p className="text-on-surface-variant text-sm font-medium">Turnover: <span className="font-bold">45 Days</span></p>
+          <h4 className="text-lg font-bold font-headline mb-1 leading-tight">{slowestItem.name}</h4>
+          <p className="text-on-surface-variant text-sm font-medium">Stock: <span className="font-bold">{slowestItem.stock}</span></p>
           <div className="mt-3 flex gap-1">
             <div className="h-1 flex-1 bg-error/20 rounded-full overflow-hidden">
               <div className="h-full bg-error w-[85%]"></div>
@@ -87,7 +121,7 @@ export const Reports = () => {
             </div>
           </div>
           <div className="relative h-[300px] chart-grid rounded-xl overflow-hidden" style={{ backgroundImage: 'linear-gradient(to right, #e1e9ee 1px, transparent 1px), linear-gradient(to bottom, #e1e9ee 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
-            <svg className="w-full h-full absolute inset-0" viewBox="0 0 1000 300">
+            <svg className="w-full h-full absolute inset-0" viewBox="0 0 1000 300" preserveAspectRatio="none">
               <path d="M0,200 L100,180 L200,190 L300,150 L400,140 L500,130 L600,120 L700,110 L800,105 L900,100 L1000,90" fill="none" stroke="#44546a" strokeDasharray="8,4" strokeOpacity="0.5" strokeWidth="2"></path>
               <path d="M0,250 C100,240 150,180 250,160 S400,200 500,150 S750,50 1000,40" fill="none" stroke="url(#lineGradient)" strokeLinecap="round" strokeWidth="4"></path>
               <defs>
@@ -98,16 +132,16 @@ export const Reports = () => {
               </defs>
             </svg>
             <div className="absolute left-[70%] top-[40px] bg-on-surface text-white p-3 rounded-xl shadow-xl backdrop-blur-md">
-              <p className="text-[10px] font-bold opacity-70">OCT 24</p>
-              <p className="text-sm font-extrabold">${(totalSalesValue || 18420).toLocaleString()}</p>
+              <p className="text-[10px] font-bold opacity-70">CURRENT</p>
+              <p className="text-sm font-extrabold">${(totalSalesValue).toLocaleString()}</p>
             </div>
           </div>
           <div className="flex justify-between mt-6 px-2 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-            <span>Oct 01</span>
-            <span>Oct 07</span>
-            <span>Oct 14</span>
-            <span>Oct 21</span>
-            <span>Oct 28</span>
+            <span>Period 1</span>
+            <span>Period 2</span>
+            <span>Period 3</span>
+            <span>Period 4</span>
+            <span>Period 5</span>
           </div>
         </div>
 
@@ -115,9 +149,9 @@ export const Reports = () => {
           <h3 className="text-xl font-bold font-headline mb-8">Inventory Health</h3>
           <div className="relative flex justify-center items-center mb-8">
             <div className="w-48 h-48 rounded-full border-[16px] border-surface-container-high relative">
-              <div className="absolute inset-0 rounded-full border-[16px] border-primary border-t-transparent border-r-transparent rotate-45"></div>
+              <div className="absolute inset-0 rounded-full border-[16px] border-primary border-t-transparent border-r-transparent rotate-45" style={{ transform: `rotate(${(healthPct / 100) * 360 - 45}deg)` }}></div>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-extrabold">82%</span>
+                <span className="text-3xl font-extrabold">{healthPct}%</span>
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Optimal</span>
               </div>
             </div>
@@ -128,21 +162,21 @@ export const Reports = () => {
                 <div className="w-2 h-2 rounded-full bg-primary"></div>
                 <span className="text-sm font-semibold">Stocked</span>
               </div>
-              <span className="text-sm font-bold">1,240 SKU</span>
+              <span className="text-sm font-bold">{inStockCount} SKU</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-surface-container-low rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-tertiary"></div>
                 <span className="text-sm font-semibold">Low Stock</span>
               </div>
-              <span className="text-sm font-bold">184 SKU</span>
+              <span className="text-sm font-bold">{lowStockCount} SKU</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-error-container/20 rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-error"></div>
                 <span className="text-sm font-semibold text-error">Out of Stock</span>
               </div>
-              <span className="text-sm font-bold text-error">12 SKU</span>
+              <span className="text-sm font-bold text-error">{outOfStockCount} SKU</span>
             </div>
           </div>
         </div>

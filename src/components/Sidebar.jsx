@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: 'dashboard' },
@@ -10,6 +10,7 @@ const navItems = [
 ];
 
 export const Sidebar = () => {
+  const navigate = useNavigate();
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 dark:bg-slate-900 flex flex-col border-r border-slate-200/50 dark:border-slate-800/50 z-50">
       <div className="p-8">
@@ -37,7 +38,7 @@ export const Sidebar = () => {
       </nav>
 
       <div className="px-4 py-8 space-y-2">
-        <button className="w-full bg-gradient-to-br from-primary to-primary-dim text-on-primary py-3 px-4 rounded-xl font-headline font-bold text-sm mb-6 flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+        <button onClick={() => navigate('/inventory')} className="w-full bg-gradient-to-br from-primary to-primary-dim text-on-primary py-3 px-4 rounded-xl font-headline font-bold text-sm mb-6 flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
           <span className="material-symbols-outlined">add</span>
           New Entry
         </button>

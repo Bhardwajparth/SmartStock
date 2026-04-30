@@ -23,9 +23,13 @@ ChartJS.register(
 export const Dashboard = () => {
   const { inventory, orders } = useContext(AppContext);
   
-  const totalProducts = inventory.length > 0 ? inventory.reduce((sum, item) => sum + item.stock, 0) : 12842;
-  const activeOrdersCount = orders.length > 0 ? orders.filter(o => o.status !== 'Completed').length : 439;
+  const totalProducts = inventory.reduce((sum, item) => sum + item.stock, 0);
+  const activeOrdersCount = orders.filter(o => o.status !== 'Completed').length;
   const lowStockItems = inventory.filter(i => i.isCritical);
+
+  const handleExport = () => {
+    window.print();
+  };
 
   const chartOptions = {
     responsive: true,
@@ -39,12 +43,15 @@ export const Dashboard = () => {
     }
   };
 
+  const salesCount = orders.filter(o => o.type === 'Sales').length;
+  const dynamicDecValue = 90 + (salesCount * 5);
+
   const chartData = {
     labels: ['JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
     datasets: [
       {
         label: 'Sales Trend',
-        data: [40, 60, 45, 75, 55, 90],
+        data: [40, 60, 45, 75, 55, dynamicDecValue],
         backgroundColor: '#c7d3ff',
         hoverBackgroundColor: '#0053db',
         borderRadius: 8,
@@ -52,6 +59,9 @@ export const Dashboard = () => {
       }
     ],
   };
+
+  const maxCapacity = 1400000;
+  const currentCapacityPct = ((totalProducts / maxCapacity) * 100).toFixed(2);
 
   return (
     <>
@@ -61,7 +71,7 @@ export const Dashboard = () => {
           <p className="text-slate-500 mt-2 font-medium">Real-time performance metrics for Q3 Inventory Cycles.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-5 py-2.5 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
+          <button onClick={handleExport} className="px-5 py-2.5 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
             <span className="material-symbols-outlined text-lg">file_download</span>
             Export PDF
           </button>
@@ -82,7 +92,7 @@ export const Dashboard = () => {
           <div className="flex items-center gap-2 relative z-10">
             <span className="text-tertiary font-bold text-xs flex items-center">
               <span className="material-symbols-outlined text-sm">trending_up</span>
-              +14.2%
+              +{(totalProducts / 100).toFixed(1)}%
             </span>
             <span className="text-slate-400 text-xs">from last month</span>
           </div>
@@ -104,7 +114,7 @@ export const Dashboard = () => {
           <div className="flex items-center gap-2 relative z-10">
             <span className="text-tertiary font-bold text-xs flex items-center">
               <span className="material-symbols-outlined text-sm">trending_up</span>
-              +2.4%
+              +{(activeOrdersCount * 2.4).toFixed(1)}%
             </span>
             <span className="text-slate-400 text-xs">vs yesterday</span>
           </div>
@@ -164,10 +174,10 @@ export const Dashboard = () => {
               <div>
                 <div className="flex justify-between text-xs font-bold mb-2">
                   <span className="text-slate-400 uppercase tracking-wider">Storage Zone A</span>
-                  <span>82%</span>
+                  <span>{Math.min(100, Math.max(0, 82 + salesCount)).toFixed(0)}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-tertiary-fixed w-[82%]"></div>
+                  <div className="h-full bg-tertiary-fixed transition-all" style={{ width: `${Math.min(100, Math.max(0, 82 + salesCount))}%` }}></div>
                 </div>
               </div>
               <div>
@@ -193,7 +203,7 @@ export const Dashboard = () => {
           <div className="mt-12 flex justify-center relative z-10">
             <div className="text-center">
               <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Capacity</p>
-              <p className="text-4xl font-extrabold">1.4M<span className="text-sm font-normal text-slate-500 ml-1">Units</span></p>
+              <p className="text-4xl font-extrabold">{(maxCapacity / 1000000).toFixed(1)}M<span className="text-sm font-normal text-slate-500 ml-1">Units</span></p>
             </div>
           </div>
           <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-10">
@@ -231,7 +241,7 @@ export const Dashboard = () => {
                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Stock Level</p>
                 <div className="flex items-center gap-2">
                   <span className={`text-lg font-extrabold ${item.stock === 0 ? 'text-error' : 'text-on-surface'}`}>{item.stock}</span>
-                  <span className="text-xs text-slate-400">/ {item.maxStock} units</span>
+                  <span className="text-xs text-slate-400">/ {item.maxStock || 500} units</span>
                 </div>
               </div>
               <div className="pl-4 border-l border-slate-100 flex gap-2">
@@ -244,6 +254,11 @@ export const Dashboard = () => {
               </div>
             </div>
           ))}
+          {lowStockItems.length === 0 && (
+            <div className="p-8 text-center text-slate-500">
+              No low stock items. All inventory levels are optimal.
+            </div>
+          )}
         </div>
       </section>
     </>

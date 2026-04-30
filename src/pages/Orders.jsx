@@ -2,14 +2,19 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 
 export const Orders = () => {
-  const { orders, addSalesOrder, addPurchaseOrder, inventory } = useContext(AppContext);
-  const [selectedOrder, setSelectedOrder] = useState(orders[0] || null);
+  const { orders, addSalesOrder, addPurchaseOrder, updateOrderStatus, deleteOrder, inventory, searchQuery } = useContext(AppContext);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [newOrder, setNewOrder] = useState({ type: 'Sales', productId: inventory[0]?.id || '', qty: 1 });
 
-  const activeSales = orders.filter(o => o.type === 'Sales').length;
-  const purchases = orders.filter(o => o.type === 'Purchase').length;
+  const filteredOrders = orders.filter(o => 
+    o.id.includes(searchQuery) || 
+    (inventory.find(i => i.id === o.productId)?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const activeSales = orders.filter(o => o.type === 'Sales' && o.status !== 'Completed').length;
+  const purchases = orders.filter(o => o.type === 'Purchase' && o.status !== 'Completed').length;
 
   const handleCreateOrder = (e) => {
     e.preventDefault();
@@ -19,6 +24,15 @@ export const Orders = () => {
       addPurchaseOrder(newOrder.productId, parseInt(newOrder.qty, 10));
     }
     setIsOverlayOpen(false);
+  };
+
+  const selectedOrder = orders.find(o => o.id === selectedOrderId) || filteredOrders[0] || null;
+
+  const handleDeleteOrder = (id) => {
+    if (window.confirm('Delete this order?')) {
+      deleteOrder(id);
+      if (selectedOrderId === id) setSelectedOrderId(null);
+    }
   };
 
   return (
@@ -90,8 +104,8 @@ export const Orders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
-                {orders.map(order => (
-                  <tr key={order.id} onClick={() => setSelectedOrder(order)} className={`hover:bg-surface-container-lowest transition-colors cursor-pointer group ${selectedOrder?.id === order.id ? 'bg-surface-container-low/50' : ''}`}>
+                {filteredOrders.map(order => (
+                  <tr key={order.id} onClick={() => setSelectedOrderId(order.id)} className={`hover:bg-surface-container-lowest transition-colors cursor-pointer group ${selectedOrder?.id === order.id ? 'bg-surface-container-low/50' : ''}`}>
                     <td className="px-6 py-5">
                       <p className="font-headline font-bold text-sm">ORD-{order.id.slice(-4)}</p>
                     </td>
@@ -102,7 +116,7 @@ export const Orders = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="text-sm font-medium">{order.productId}</p>
+                      <p className="text-sm font-medium">{inventory.find(i => i.id === order.productId)?.name || order.productId}</p>
                     </td>
                     <td className="px-6 py-5">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${order.status === 'Completed' ? 'bg-tertiary-container text-on-tertiary-container' : 'bg-surface-container-highest text-on-surface-variant'}`}>{order.status}</span>
@@ -110,9 +124,9 @@ export const Orders = () => {
                     <td className="px-6 py-5 text-right font-headline font-bold text-sm">{order.qty}</td>
                   </tr>
                 ))}
-                {orders.length === 0 && (
+                {filteredOrders.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-slate-500">No orders yet.</td>
+                    <td colSpan="5" className="px-6 py-8 text-center text-slate-500">No orders found.</td>
                   </tr>
                 )}
               </tbody>
@@ -128,9 +142,21 @@ export const Orders = () => {
                   <h4 className="font-headline font-extrabold text-2xl">ORD-{selectedOrder.id.slice(-4)}</h4>
                   <p className="text-primary font-bold text-sm">{selectedOrder.type} Fulfillment</p>
                 </div>
-                <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:shadow-md transition-all">
-                  <span className="material-symbols-outlined">more_vert</span>
-                </button>
+                <div className="flex gap-2">
+                  <select 
+                    value={selectedOrder.status} 
+                    onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                    className="px-3 py-1 bg-white border border-outline-variant/30 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option>Processing</option>
+                    <option>In Transit</option>
+                    <option>Completed</option>
+                    <option>Cancelled</option>
+                  </select>
+                  <button onClick={() => handleDeleteOrder(selectedOrder.id)} className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-error hover:bg-error-container transition-all">
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
               </div>
               <div className="space-y-8">
                 <div className="bg-white/40 rounded-3xl p-6 space-y-4">

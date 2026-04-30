@@ -2,26 +2,69 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 
 export const Inventory = () => {
-  const { inventory, setInventory } = useContext(AppContext);
+  const { inventory, addProduct, updateProduct, deleteProduct, searchQuery } = useContext(AppContext);
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [newProduct, setNewProduct] = useState({ name: '', sku: '', type: 'Structural', stock: 0, price: 0, desc: '' });
 
-  const totalValue = inventory.reduce((sum, item) => sum + (item.stock * (item.price || 1200)), 0);
+  const filteredInventory = inventory.filter(item => 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const handleCreateProduct = (e) => {
+  const totalValue = filteredInventory.reduce((sum, item) => sum + (item.stock * (item.price || 1200)), 0);
+
+  const handleCreateOrUpdateProduct = (e) => {
     e.preventDefault();
     const item = {
-      id: Date.now().toString(),
       name: newProduct.name,
       sku: newProduct.sku,
       type: newProduct.type,
-      stock: parseInt(newProduct.stock, 10),
-      maxStock: 500,
-      price: parseFloat(newProduct.price),
-      isCritical: parseInt(newProduct.stock, 10) < 50
+      stock: parseInt(newProduct.stock, 10) || 0,
+      price: parseFloat(newProduct.price) || 0,
+      desc: newProduct.desc
     };
-    setInventory(prev => [...prev, item]);
+
+    if (editingId) {
+      updateProduct(editingId, item);
+    } else {
+      addProduct({
+        ...item,
+        id: Date.now().toString(),
+        maxStock: 500,
+        isCritical: (parseInt(newProduct.stock, 10) || 0) < 50
+      });
+    }
+    
     setIsOverlayOpen(false);
+    setEditingId(null);
+    setNewProduct({ name: '', sku: '', type: 'Structural', stock: 0, price: 0, desc: '' });
+  };
+
+  const handleEditClick = (item) => {
+    setEditingId(item.id);
+    setNewProduct({
+      name: item.name,
+      sku: item.sku,
+      type: item.type,
+      stock: item.stock,
+      price: item.price || 0,
+      desc: item.desc || item.location || ''
+    });
+    setIsOverlayOpen(true);
+  };
+
+  const handleDeleteClick = (id) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      deleteProduct(id);
+    }
+  };
+
+  const openAddModal = () => {
+    setEditingId(null);
+    setNewProduct({ name: '', sku: '', type: 'Structural', stock: 0, price: 0, desc: '' });
+    setIsOverlayOpen(true);
   };
 
   return (
@@ -37,7 +80,7 @@ export const Inventory = () => {
             <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition-all scale-95 active:scale-90">
               <span className="material-symbols-outlined">filter_list</span> Filters
             </button>
-            <button onClick={() => setIsOverlayOpen(true)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-dim text-white font-bold shadow-lg shadow-primary/20 scale-95 active:scale-90 transition-transform">
+            <button onClick={openAddModal} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-dim text-white font-bold shadow-lg shadow-primary/20 scale-95 active:scale-90 transition-transform">
               <span className="material-symbols-outlined">add_circle</span> Add Product
             </button>
           </div>
@@ -47,21 +90,21 @@ export const Inventory = () => {
           <div className="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Total SKUs</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-manrope">{inventory.length}</span>
+              <span className="text-3xl font-bold font-manrope">{filteredInventory.length}</span>
               <span className="text-tertiary text-xs font-bold">+12%</span>
             </div>
           </div>
           <div className="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-tertiary">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">In Stock</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-manrope">{inventory.filter(i => i.stock > 0).length}</span>
+              <span className="text-3xl font-bold font-manrope">{filteredInventory.filter(i => i.stock > 0).length}</span>
               <span className="text-slate-400 text-xs font-medium">Items</span>
             </div>
           </div>
           <div className="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-error">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Critical Level</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold font-manrope">{inventory.filter(i => i.stock < i.maxStock * 0.1).length}</span>
+              <span className="text-3xl font-bold font-manrope">{filteredInventory.filter(i => i.stock < (i.maxStock || 500) * 0.1).length}</span>
               <span className="text-error text-xs font-bold">Action Needed</span>
             </div>
           </div>
@@ -88,7 +131,7 @@ export const Inventory = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15">
-                {inventory.map(item => (
+                {filteredInventory.map(item => (
                   <tr key={item.id} className="hover:bg-surface-container-lowest transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
@@ -117,23 +160,28 @@ export const Inventory = () => {
                           {item.stock} Units
                         </span>
                         <div className="w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
-                          <div className={`${item.stock === 0 ? 'bg-error' : 'bg-tertiary'} h-full`} style={{ width: `${Math.min(100, (item.stock / item.maxStock) * 100)}%` }}></div>
+                          <div className={`${item.stock === 0 ? 'bg-error' : 'bg-tertiary'} h-full`} style={{ width: `${Math.min(100, (item.stock / (item.maxStock || 500)) * 100)}%` }}></div>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6 font-bold text-on-surface">${(item.price || 1240).toLocaleString()}.00</td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary-container/30 rounded-lg transition-all">
+                        <button onClick={() => handleEditClick(item)} className="p-2 text-slate-400 hover:text-primary hover:bg-primary-container/30 rounded-lg transition-all">
                           <span className="material-symbols-outlined">edit</span>
                         </button>
-                        <button className="p-2 text-slate-400 hover:text-error hover:bg-error-container/30 rounded-lg transition-all">
+                        <button onClick={() => handleDeleteClick(item.id)} className="p-2 text-slate-400 hover:text-error hover:bg-error-container/30 rounded-lg transition-all">
                           <span className="material-symbols-outlined">delete</span>
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {filteredInventory.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="px-8 py-10 text-center text-slate-500">No products found.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -143,7 +191,7 @@ export const Inventory = () => {
       <div className={`fixed inset-0 bg-on-surface/20 backdrop-blur-sm z-[60] flex justify-end transition-opacity duration-300 ${isOverlayOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className={`w-full max-w-lg bg-surface-container-lowest h-full shadow-2xl p-10 flex flex-col transform transition-transform duration-300 ${isOverlayOpen ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="flex justify-between items-center mb-10">
-            <h3 className="text-2xl font-extrabold font-manrope">New Inventory Entry</h3>
+            <h3 className="text-2xl font-extrabold font-manrope">{editingId ? 'Edit Product' : 'New Inventory Entry'}</h3>
             <button onClick={() => setIsOverlayOpen(false)} className="p-2 hover:bg-surface-container rounded-full">
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -161,6 +209,10 @@ export const Inventory = () => {
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Category</label>
                 <select value={newProduct.type} onChange={e => setNewProduct({...newProduct, type: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
+                  <option>Raw Material</option>
+                  <option>Component</option>
+                  <option>Consumable</option>
+                  <option>Finished Good</option>
                   <option>Structural</option>
                   <option>Façade</option>
                   <option>Foundation</option>
@@ -185,7 +237,7 @@ export const Inventory = () => {
           </form>
           <div className="pt-8 flex gap-3">
             <button onClick={() => setIsOverlayOpen(false)} className="flex-1 py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-all">Cancel</button>
-            <button onClick={handleCreateProduct} className="flex-[2] py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all">Publish Item</button>
+            <button onClick={handleCreateOrUpdateProduct} className="flex-[2] py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all">{editingId ? 'Save Changes' : 'Publish Item'}</button>
           </div>
         </div>
       </div>
