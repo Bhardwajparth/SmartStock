@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("user") // admin, user, manager
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  type        String
+  stock       Int      @default(0)
+  maxStock    Int      @default(500)
+  price       Float    @default(0.0)
+  location    String?
+  isCritical  Boolean  @default(false)
+  stockStatus String?
+  imgUrl      String?
+
+  // Relations
+  orders      Order[]
+  jobs        ManufacturingJob[] @relation("FinishedGood")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  type      String   // Sales, Purchase
+  qty       Int
+  status    String   @default("Processing") // Processing, In Transit, Completed
+  timestamp DateTime @default(now())
+  
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ManufacturingJob {
+  id             String   @id @default(uuid())
+  qty            Int
+  status         String   @default("Completed") // Pending, Completed
+  timestamp      DateTime @default(now())
+
+  finishedGoodId String
+  finishedGood   Product  @relation("FinishedGood", fields: [finishedGoodId], references: [id])
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

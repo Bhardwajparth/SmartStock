@@ -1,11 +1,15 @@
-import React, { useContext, useState } from 'react';
-import { AppContext } from '../context/AppContext';
+import React, { useState } from 'react';
+import { useManufacturing } from '../hooks/useManufacturing';
+import { useInventory } from '../hooks/useInventory';
 
 export const Manufacturing = () => {
-  const { inventory, startManufacturingJob, manufacturingJobs, updateJobStatus, searchQuery } = useContext(AppContext);
+  const { manufacturingJobs, startJob, updateJobStatus, isLoading: mfgLoading } = useManufacturing();
+  const { inventory, isLoading: invLoading } = useInventory();
+  
   const [sourceId, setSourceId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [qty, setQty] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const rawMaterials = inventory.filter(i => i.type === 'Raw Material' || i.type === 'Consumable' || i.type === 'Component');
   const finishedGoods = inventory.filter(i => i.type === 'Finished Good' || i.type === 'Component');
@@ -15,18 +19,25 @@ export const Manufacturing = () => {
     (inventory.find(i => i.id === j.finishedGoodId)?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const activeJobsCount = manufacturingJobs.filter(j => j.status === 'In Progress').length;
-
   const handleConversion = () => {
     if (sourceId && targetId && qty > 0) {
-      startManufacturingJob([sourceId], targetId, parseInt(qty, 10));
-      setQty(10);
-      setSourceId('');
-      setTargetId('');
+      startJob.mutate({
+        rawMaterialIds: [sourceId],
+        finishedGoodId: targetId,
+        qty: parseInt(qty, 10)
+      }, {
+        onSuccess: () => {
+          setQty(10);
+          setSourceId('');
+          setTargetId('');
+        }
+      });
     }
   };
 
   const estYield = Math.max(85, 99.5 - (qty * 0.05)).toFixed(1);
+
+  if (mfgLoading || invLoading) return <div className="p-8 text-center text-slate-500">Loading manufacturing data...</div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -36,11 +47,13 @@ export const Manufacturing = () => {
           <p className="text-on-surface-variant mt-1">Transform resources into finished assets with precision control.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-6 py-3 bg-surface-container-high text-on-surface font-semibold rounded-xl hover:bg-surface-container-highest transition-colors">Export Batch Report</button>
-          <button className="px-6 py-3 bg-gradient-to-br from-primary to-primary-dim text-white font-semibold rounded-xl shadow-lg shadow-primary/20 flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">add</span>
-            New Production Run
-          </button>
+          <input 
+            type="text" 
+            placeholder="Search operations..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
         </div>
       </div>
 
@@ -93,7 +106,7 @@ export const Manufacturing = () => {
                 </select>
                 <p className="text-xs text-on-primary-fixed-variant mt-1">Ready for serialization</p>
               </div>
-              <button onClick={handleConversion} disabled={!sourceId || !targetId || qty <= 0} className="w-full py-4 bg-gradient-to-br from-primary to-primary-dim text-white rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50">
+              <button onClick={handleConversion} disabled={!sourceId || !targetId || qty <= 0 || startJob.isPending} className="w-full py-4 bg-gradient-to-br from-primary to-primary-dim text-white rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50">
                 EXECUTE CONVERSION
               </button>
             </div>
@@ -171,7 +184,7 @@ export const Manufacturing = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
-                {filteredJobs.map((job, idx) => (
+                {filteredJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-surface-container-low transition-colors group">
                     <td className="px-8 py-5 font-bold text-sm">#RUN-{job.id.slice(-5)}</td>
                     <td className="px-8 py-5">
@@ -185,7 +198,8 @@ export const Manufacturing = () => {
                     <td className="px-8 py-5">
                       <select 
                         value={job.status} 
-                        onChange={(e) => updateJobStatus(job.id, e.target.value)}
+                        onChange={(e) => updateJobStatus.mutate({ id: job.id, status: e.target.value })}
+                        disabled={updateJobStatus.isPending}
                         className={`bg-transparent text-[10px] font-bold px-3 py-1 rounded-full uppercase outline-none focus:ring-2 focus:ring-primary/20 ${job.status === 'Completed' ? 'bg-tertiary-container text-on-tertiary-container' : 'bg-surface-container-highest text-on-surface-variant'}`}
                       >
                         <option>In Progress</option>

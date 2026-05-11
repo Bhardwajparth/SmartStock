@@ -1,5 +1,6 @@
-import React, { useContext } from 'react';
-import { AppContext } from '../context/AppContext';
+import React from 'react';
+import { useInventory } from '../hooks/useInventory';
+import { useOrders } from '../hooks/useOrders';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -21,7 +22,8 @@ ChartJS.register(
 );
 
 export const Dashboard = () => {
-  const { inventory, orders } = useContext(AppContext);
+  const { inventory } = useInventory();
+  const { orders } = useOrders();
   
   const totalProducts = inventory.reduce((sum, item) => sum + item.stock, 0);
   const activeOrdersCount = orders.filter(o => o.status !== 'Completed').length;

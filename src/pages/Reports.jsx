@@ -1,8 +1,10 @@
-import React, { useContext } from 'react';
-import { AppContext } from '../context/AppContext';
+import React from 'react';
+import { useInventory } from '../hooks/useInventory';
+import { useOrders } from '../hooks/useOrders';
 
 export const Reports = () => {
-  const { orders, inventory } = useContext(AppContext);
+  const { orders } = useOrders();
+  const { inventory } = useInventory();
 
   const totalSalesValue = orders.filter(o => o.type === 'Sales').reduce((acc, order) => {
     const item = inventory.find(i => i.id === order.productId);

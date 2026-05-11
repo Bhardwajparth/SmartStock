@@ -1,12 +1,31 @@
-import React, { useContext, useState } from 'react';
-import { AppContext } from '../context/AppContext';
+import React, { useState } from 'react';
+import { useOrders } from '../hooks/useOrders';
+import { useInventory } from '../hooks/useInventory';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const schema = z.object({
+  type: z.enum(['Sales', 'Purchase']),
+  productId: z.string().min(1, 'Product is required'),
+  qty: z.number().min(1, 'Quantity must be at least 1'),
+});
 
 export const Orders = () => {
-  const { orders, addSalesOrder, addPurchaseOrder, updateOrderStatus, deleteOrder, inventory, searchQuery } = useContext(AppContext);
+  const { orders, addOrder, updateOrderStatus, deleteOrder, isLoading: ordersLoading } = useOrders();
+  const { inventory, isLoading: inventoryLoading } = useInventory();
   const [selectedOrderId, setSelectedOrderId] = useState(null);
-
+  const [searchQuery, setSearchQuery] = useState('');
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  const [newOrder, setNewOrder] = useState({ type: 'Sales', productId: inventory[0]?.id || '', qty: 1 });
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      type: 'Sales',
+      productId: '',
+      qty: 1
+    }
+  });
 
   const filteredOrders = orders.filter(o => 
     o.id.includes(searchQuery) || 
@@ -16,24 +35,27 @@ export const Orders = () => {
   const activeSales = orders.filter(o => o.type === 'Sales' && o.status !== 'Completed').length;
   const purchases = orders.filter(o => o.type === 'Purchase' && o.status !== 'Completed').length;
 
-  const handleCreateOrder = (e) => {
-    e.preventDefault();
-    if (newOrder.type === 'Sales') {
-      addSalesOrder(newOrder.productId, parseInt(newOrder.qty, 10));
-    } else {
-      addPurchaseOrder(newOrder.productId, parseInt(newOrder.qty, 10));
-    }
-    setIsOverlayOpen(false);
+  const onSubmit = (data) => {
+    addOrder.mutate(data, {
+      onSuccess: () => {
+        setIsOverlayOpen(false);
+        reset();
+      }
+    });
   };
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || filteredOrders[0] || null;
 
   const handleDeleteOrder = (id) => {
     if (window.confirm('Delete this order?')) {
-      deleteOrder(id);
+      deleteOrder.mutate(id);
       if (selectedOrderId === id) setSelectedOrderId(null);
     }
   };
+
+  if (ordersLoading || inventoryLoading) {
+    return <div className="p-8 text-center text-slate-500">Loading orders...</div>;
+  }
 
   return (
     <>
@@ -43,11 +65,14 @@ export const Orders = () => {
           <p className="text-on-surface-variant mt-2 text-lg font-light leading-relaxed">Streamlining your enterprise supply chain. Managed {orders.length} orders today across global regional hubs.</p>
         </div>
         <div className="flex gap-3">
-          <div className="flex p-1 bg-surface-container-high rounded-full">
-            <button className="px-4 py-2 text-xs font-bold rounded-full bg-white shadow-sm text-primary transition-all">Sales</button>
-            <button className="px-4 py-2 text-xs font-bold rounded-full text-on-surface-variant hover:text-on-surface transition-all">Purchase</button>
-          </div>
-          <button onClick={() => setIsOverlayOpen(true)} className="bg-gradient-to-br from-primary to-primary-dim text-on-primary px-6 py-3 rounded-full font-headline font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+          <input 
+            type="text" 
+            placeholder="Search orders..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <button onClick={() => { reset(); setIsOverlayOpen(true); }} className="bg-gradient-to-br from-primary to-primary-dim text-on-primary px-6 py-3 rounded-full font-headline font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             <span className="material-symbols-outlined text-[20px]">add</span>
             Create Order
           </button>
@@ -60,7 +85,6 @@ export const Orders = () => {
             <p className="text-[10px] uppercase tracking-widest font-bold text-outline mb-1">Active Sales</p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-headline font-extrabold">{activeSales}</span>
-              <span className="text-tertiary text-xs font-bold flex items-center"><span className="material-symbols-outlined text-[14px]">arrow_upward</span></span>
             </div>
           </div>
           <div className="bg-surface-container-lowest p-6 rounded-3xl border-l-4 border-tertiary shadow-sm hover:shadow-md transition-shadow">
@@ -71,10 +95,9 @@ export const Orders = () => {
             </div>
           </div>
           <div className="bg-surface-container-lowest p-6 rounded-3xl border-l-4 border-error shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-[10px] uppercase tracking-widest font-bold text-outline mb-1">Pending Sync</p>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-outline mb-1">Total Orders</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-headline font-extrabold">0</span>
-              <span className="text-error text-xs font-bold">Needs Action</span>
+              <span className="text-3xl font-headline font-extrabold">{orders.length}</span>
             </div>
           </div>
         </div>
@@ -145,8 +168,9 @@ export const Orders = () => {
                 <div className="flex gap-2">
                   <select 
                     value={selectedOrder.status} 
-                    onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                    onChange={(e) => updateOrderStatus.mutate({ id: selectedOrder.id, status: e.target.value })}
                     className="px-3 py-1 bg-white border border-outline-variant/30 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    disabled={updateOrderStatus.isPending}
                   >
                     <option>Processing</option>
                     <option>In Transit</option>
@@ -190,31 +214,36 @@ export const Orders = () => {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <form className="space-y-6 flex-1 overflow-y-auto">
+            <form className="space-y-6 flex-1 overflow-y-auto" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Order Type</label>
-                <select value={newOrder.type} onChange={e => setNewOrder({...newOrder, type: e.target.value})} className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
+                <select {...register('type')} className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
                   <option>Sales</option>
                   <option>Purchase</option>
                 </select>
+                {errors.type && <p className="text-xs text-error">{errors.type.message}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Select Product</label>
-                <select value={newOrder.productId} onChange={e => setNewOrder({...newOrder, productId: e.target.value})} className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
+                <select {...register('productId')} className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
+                  <option value="">Select a product...</option>
                   {inventory.map(item => (
                     <option key={item.id} value={item.id}>{item.name} ({item.stock} in stock)</option>
                   ))}
                 </select>
+                {errors.productId && <p className="text-xs text-error">{errors.productId.message}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Quantity</label>
-                <input value={newOrder.qty} onChange={e => setNewOrder({...newOrder, qty: e.target.value})} className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" type="number" min="1"/>
+                <input {...register('qty', { valueAsNumber: true })} className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" type="number" min="1"/>
+                {errors.qty && <p className="text-xs text-error">{errors.qty.message}</p>}
+              </div>
+              
+              <div className="pt-8 flex gap-3">
+                <button type="button" onClick={() => setIsOverlayOpen(false)} className="flex-1 py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-all">Cancel</button>
+                <button type="submit" disabled={addOrder.isPending} className="flex-[2] py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-50">Create Order</button>
               </div>
             </form>
-            <div className="pt-8 flex gap-3">
-              <button onClick={() => setIsOverlayOpen(false)} className="flex-1 py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-all">Cancel</button>
-              <button onClick={handleCreateOrder} className="flex-[2] py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all">Create Order</button>
-            </div>
           </div>
         </div>
       )}

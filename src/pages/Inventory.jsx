@@ -1,11 +1,37 @@
-import React, { useContext, useState } from 'react';
-import { AppContext } from '../context/AppContext';
+import React, { useState } from 'react';
+import { useInventory } from '../hooks/useInventory';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const schema = z.object({
+  name: z.string().min(1, 'Product name is required'),
+  sku: z.string().min(1, 'SKU is required'),
+  type: z.string().min(1, 'Category is required'),
+  stock: z.number().min(0, 'Stock cannot be negative'),
+  maxStock: z.number().min(1, 'Max stock must be at least 1').default(500),
+  price: z.number().min(0, 'Price cannot be negative'),
+  location: z.string().optional()
+});
 
 export const Inventory = () => {
-  const { inventory, addProduct, updateProduct, deleteProduct, searchQuery } = useContext(AppContext);
+  const { inventory, addProduct, updateProduct, deleteProduct, isLoading } = useInventory();
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [newProduct, setNewProduct] = useState({ name: '', sku: '', type: 'Structural', stock: 0, price: 0, desc: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: '',
+      sku: '',
+      type: 'Structural',
+      stock: 0,
+      maxStock: 500,
+      price: 0,
+      location: ''
+    }
+  });
 
   const filteredInventory = inventory.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -15,57 +41,50 @@ export const Inventory = () => {
 
   const totalValue = filteredInventory.reduce((sum, item) => sum + (item.stock * (item.price || 1200)), 0);
 
-  const handleCreateOrUpdateProduct = (e) => {
-    e.preventDefault();
-    const item = {
-      name: newProduct.name,
-      sku: newProduct.sku,
-      type: newProduct.type,
-      stock: parseInt(newProduct.stock, 10) || 0,
-      price: parseFloat(newProduct.price) || 0,
-      desc: newProduct.desc
-    };
-
+  const onSubmit = (data) => {
     if (editingId) {
-      updateProduct(editingId, item);
+      updateProduct.mutate({ id: editingId, ...data }, {
+        onSuccess: () => {
+          setIsOverlayOpen(false);
+          setEditingId(null);
+          reset();
+        }
+      });
     } else {
-      addProduct({
-        ...item,
-        id: Date.now().toString(),
-        maxStock: 500,
-        isCritical: (parseInt(newProduct.stock, 10) || 0) < 50
+      addProduct.mutate(data, {
+        onSuccess: () => {
+          setIsOverlayOpen(false);
+          reset();
+        }
       });
     }
-    
-    setIsOverlayOpen(false);
-    setEditingId(null);
-    setNewProduct({ name: '', sku: '', type: 'Structural', stock: 0, price: 0, desc: '' });
   };
 
   const handleEditClick = (item) => {
     setEditingId(item.id);
-    setNewProduct({
-      name: item.name,
-      sku: item.sku,
-      type: item.type,
-      stock: item.stock,
-      price: item.price || 0,
-      desc: item.desc || item.location || ''
-    });
+    setValue('name', item.name);
+    setValue('sku', item.sku);
+    setValue('type', item.type);
+    setValue('stock', item.stock);
+    setValue('maxStock', item.maxStock || 500);
+    setValue('price', item.price || 0);
+    setValue('location', item.location || '');
     setIsOverlayOpen(true);
   };
 
   const handleDeleteClick = (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      deleteProduct(id);
+      deleteProduct.mutate(id);
     }
   };
 
   const openAddModal = () => {
     setEditingId(null);
-    setNewProduct({ name: '', sku: '', type: 'Structural', stock: 0, price: 0, desc: '' });
+    reset();
     setIsOverlayOpen(true);
   };
+
+  if (isLoading) return <div className="p-8 text-center text-slate-500">Loading inventory...</div>;
 
   return (
     <>
@@ -77,9 +96,13 @@ export const Inventory = () => {
             <p className="text-on-surface-variant mt-2 max-w-md">Precision tracking for high-end architectural components and structural materials.</p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition-all scale-95 active:scale-90">
-              <span className="material-symbols-outlined">filter_list</span> Filters
-            </button>
+            <input 
+              type="text" 
+              placeholder="Search products..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
             <button onClick={openAddModal} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-dim text-white font-bold shadow-lg shadow-primary/20 scale-95 active:scale-90 transition-transform">
               <span className="material-symbols-outlined">add_circle</span> Add Product
             </button>
@@ -91,7 +114,6 @@ export const Inventory = () => {
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Total SKUs</p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold font-manrope">{filteredInventory.length}</span>
-              <span className="text-tertiary text-xs font-bold">+12%</span>
             </div>
           </div>
           <div className="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-tertiary">
@@ -135,18 +157,12 @@ export const Inventory = () => {
                   <tr key={item.id} className="hover:bg-surface-container-lowest transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        {item.imgUrl ? (
-                          <div className="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center overflow-hidden">
-                            <img className="w-full h-full object-cover" alt={item.name} src={item.imgUrl} />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center overflow-hidden text-slate-400">
-                            <span className="material-symbols-outlined">inventory_2</span>
-                          </div>
-                        )}
+                        <div className="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center overflow-hidden text-slate-400">
+                          <span className="material-symbols-outlined">inventory_2</span>
+                        </div>
                         <div>
                           <p className="font-bold text-on-surface font-manrope">{item.name}</p>
-                          <p className="text-xs text-slate-500">{item.desc || item.location}</p>
+                          <p className="text-xs text-slate-500">{item.location}</p>
                         </div>
                       </div>
                     </td>
@@ -196,49 +212,57 @@ export const Inventory = () => {
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
-          <form className="space-y-6 flex-1 overflow-y-auto">
+          <form className="space-y-6 flex-1 overflow-y-auto" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Product Name</label>
-              <input value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="e.g. Architectural Beam" type="text"/>
+              <input {...register('name')} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="e.g. Architectural Beam" type="text"/>
+              {errors.name && <p className="text-xs text-error">{errors.name.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">SKU Code</label>
-                <input value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="GL-000-00" type="text"/>
+                <input {...register('sku')} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="GL-000-00" type="text"/>
+                {errors.sku && <p className="text-xs text-error">{errors.sku.message}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Category</label>
-                <select value={newProduct.type} onChange={e => setNewProduct({...newProduct, type: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
+                <select {...register('type')} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20">
                   <option>Raw Material</option>
                   <option>Component</option>
                   <option>Consumable</option>
                   <option>Finished Good</option>
                   <option>Structural</option>
-                  <option>Façade</option>
-                  <option>Foundation</option>
-                  <option>Interior</option>
                 </select>
+                {errors.type && <p className="text-xs text-error">{errors.type.message}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Initial Stock</label>
-                <input value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="0" type="number"/>
+                <input {...register('stock', { valueAsNumber: true })} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="0" type="number"/>
+                {errors.stock && <p className="text-xs text-error">{errors.stock.message}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Unit Price ($)</label>
-                <input value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="0.00" type="number"/>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Max Stock</label>
+                <input {...register('maxStock', { valueAsNumber: true })} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="500" type="number"/>
+                {errors.maxStock && <p className="text-xs text-error">{errors.maxStock.message}</p>}
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Unit Price ($)</label>
+              <input {...register('price', { valueAsNumber: true })} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="0.00" type="number"/>
+              {errors.price && <p className="text-xs text-error">{errors.price.message}</p>}
+            </div>
             <div className="space-y-2 pt-4">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Description</label>
-              <textarea value={newProduct.desc} onChange={e => setNewProduct({...newProduct, desc: e.target.value})} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="Product specifications and material details..." rows="4"></textarea>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Location</label>
+              <input {...register('location')} className="w-full border shadow-sm outline-none bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20" placeholder="Warehouse A-12" type="text" />
+            </div>
+            
+            <div className="pt-8 flex gap-3">
+              <button type="button" onClick={() => setIsOverlayOpen(false)} className="flex-1 py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-all">Cancel</button>
+              <button type="submit" disabled={addProduct.isPending || updateProduct.isPending} className="flex-[2] py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-50">{editingId ? 'Save Changes' : 'Publish Item'}</button>
             </div>
           </form>
-          <div className="pt-8 flex gap-3">
-            <button onClick={() => setIsOverlayOpen(false)} className="flex-1 py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-all">Cancel</button>
-            <button onClick={handleCreateOrUpdateProduct} className="flex-[2] py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all">{editingId ? 'Save Changes' : 'Publish Item'}</button>
-          </div>
         </div>
       </div>
     </>

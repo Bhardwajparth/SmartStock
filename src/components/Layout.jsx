@@ -2,8 +2,11 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Outlet } from 'react-router-dom';
+import { useSocket } from '../hooks/useSocket';
 
 export const Layout = () => {
+  useSocket(); // Initialize real-time updates
+
   return (
     <div className="bg-background text-on-surface overflow-x-hidden min-h-screen">
       <Sidebar />
